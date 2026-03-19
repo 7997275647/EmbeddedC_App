@@ -105,10 +105,7 @@ class APIValidator {
     const payload = {
       code: code,
       language: 'c',
-      compiler: 'gcc-head',
-      options: 'warning,optimize2',
-      stdin: '',
-      'save-temps': false
+      compiler: 'gcc-head'
     };
 
     try {
@@ -131,24 +128,36 @@ class APIValidator {
       }
 
       const result = await response.json();
-      console.log('API Response:', result);
+      console.log('Full API Response:', JSON.stringify(result, null, 2));
       
       // Wandbox response format:
       // {
-      //   "status": "0" (success) or error code,
-      //   "compiler": "gcc-head",
-      //   "code": 0,
+      //   "status": "0" (success, as STRING not number!),
       //   "signal": "",
-      //   "stdout": "program output here",
-      //   "stderr": "compile/runtime errors here"
+      //   "compiler_output": "",
+      //   "compiler_error": "",
+      //   "compiler_message": "",
+      //   "program_output": "program stdout here",
+      //   "program_error": "program stderr if any"
       // }
 
-      const compileError = result.compiler_error || result.stderr || '';
-      const output = result.stdout || '';
+      // Check for compilation errors (status should be '0' for success)
+      const isSuccess = String(result.status) === '0';
+      const compileError = result.compiler_error || result.compiler_message || '';
+      
+      // Output comes from program_output or stdout
+      const output = result.program_output || result.stdout || '';
+
+      console.log('Parsed Result:', {
+        isSuccess,
+        compileError,
+        output,
+        status: result.status
+      });
 
       return {
         output: output,
-        statusCode: result.status === 0 ? 200 : 201,
+        statusCode: isSuccess ? 200 : 201,
         compileError: compileError.trim(),
         rawResponse: result
       };
