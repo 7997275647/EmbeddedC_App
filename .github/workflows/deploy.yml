@@ -9,6 +9,11 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    
+    # Grant write permissions for GitHub Pages deployment
+    permissions:
+      contents: write
+      pages: write
 
     steps:
     # Checkout the code
