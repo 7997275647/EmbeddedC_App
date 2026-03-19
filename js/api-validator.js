@@ -1,15 +1,12 @@
 /**
  * API Validator Module
- * Uses JDoodle Online C Compiler API for code validation
- * Free tier: https://www.jdoodle.com/compiler-api/
+ * Uses Wandbox Online C Compiler API for code validation
+ * Wandbox: https://wandbox.org/
  */
 
-// JDoodle API Configuration
-// Free tier credentials - feel free to use your own from https://www.jdoodle.com/compiler-api/
-const JDOODLE_CONFIG = {
-  clientId: '250d5e55ee4532c63a4886acf8be259e',     // Get free from jdoodle.com
-  clientSecret: '5202ccfba90657cd208b7ec0451cccc9d9ba5326481a9c746fcfb3421ea6971a',  // Get free from jdoodle.com
-  apiUrl: 'https://api.jdoodle.com/v1/execute'
+// Wandbox API Configuration
+const WANDBOX_CONFIG = {
+  apiUrl: 'https://wandbox.org/api/compile.json'
 };
 
 // Expected outputs for each level (for validation)
@@ -33,29 +30,29 @@ const EXPECTED_OUTPUTS = {
 
 class APIValidator {
   /**
-   * Validate code using JDoodle Online Compiler
+   * Validate code using Wandbox Online Compiler
    * @param {number} levelId - The lesson level ID
    * @param {string} code - The C code to validate
    * @returns {Promise<{correct: boolean, message: string, details?: string}>}
    */
   static async validate(levelId, code) {
     try {
-      // Call JDoodle API
+      // Call Wandbox API
       const result = await APIValidator.executeCode(code);
       
       console.log('Validation Result:', {
         statusCode: result.statusCode,
-        error: result.error,
+        compileError: result.compileError,
         output: result.output
       });
 
-      // Check for actual compilation/runtime errors (statusCode 201)
-      if (result.statusCode === 201 || result.error) {
-        console.log('Compilation/Runtime Error detected');
+      // Check for compilation errors
+      if (result.compileError) {
+        console.log('Compilation Error detected');
         return {
           correct: false,
-          message: 'Compilation/Runtime Error',
-          details: result.error || result.output,
+          message: 'Compilation Error',
+          details: result.compileError,
           type: 'error'
         };
       }
@@ -100,23 +97,23 @@ class APIValidator {
   }
 
   /**
-   * Execute C code using JDoodle API
+   * Execute C code using Wandbox API
    * @param {string} code - C code to execute
-   * @returns {Promise<{output: string, statusCode: number, error?: string}>}
+   * @returns {Promise<{output: string, compileError: string}>}
    */
   static async executeCode(code) {
     const payload = {
-      clientId: JDOODLE_CONFIG.clientId,
-      clientSecret: JDOODLE_CONFIG.clientSecret,
-      script: code,
+      code: code,
       language: 'c',
-      versionIndex: '0',
-      stdin: ''
+      compiler: 'gcc-head',
+      options: 'warning,optimize2',
+      stdin: '',
+      'save-temps': false
     };
 
     try {
-      console.log('Sending code to JDoodle API...');
-      const response = await fetch(JDOODLE_CONFIG.apiUrl, {
+      console.log('Sending code to Wandbox API...');
+      const response = await fetch(WANDBOX_CONFIG.apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -130,34 +127,33 @@ class APIValidator {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('API Error Response:', errorText);
-        throw new Error(`JDoodle API error: ${response.status} - ${errorText}`);
+        throw new Error(`Wandbox API error: ${response.status} - ${errorText}`);
       }
 
       const result = await response.json();
       console.log('API Response:', result);
       
-      // JDoodle response format:
+      // Wandbox response format:
       // {
-      //   "statusCode": 200,
-      //   "output": "program output here",
-      //   "cpuTime": 0.15,
-      //   "memory": 1024
-      // }
-      // Or error:
-      // {
-      //   "statusCode": 201,
-      //   "error": "compilation error details"
+      //   "status": "0" (success) or error code,
+      //   "compiler": "gcc-head",
+      //   "code": 0,
+      //   "signal": "",
+      //   "stdout": "program output here",
+      //   "stderr": "compile/runtime errors here"
       // }
 
+      const compileError = result.compiler_error || result.stderr || '';
+      const output = result.stdout || '';
+
       return {
-        output: result.output || '',
-        statusCode: result.statusCode || 200,
-        error: result.error || (result.statusCode !== 200 ? result.output : null),
-        cpuTime: result.cpuTime,
-        memory: result.memory
+        output: output,
+        statusCode: result.status === 0 ? 200 : 201,
+        compileError: compileError.trim(),
+        rawResponse: result
       };
     } catch (error) {
-      console.error('JDoodle API Call Error:', error);
+      console.error('Wandbox API Call Error:', error);
       throw error;
     }
   }
@@ -166,17 +162,13 @@ class APIValidator {
    * Check if API is configured properly
    */
   static isConfigured() {
-    return JDOODLE_CONFIG.clientId !== 'YOUR_CLIENT_ID_HERE' &&
-           JDOODLE_CONFIG.clientSecret !== 'YOUR_CLIENT_SECRET_HERE';
+    return true; // Wandbox doesn't require authentication
   }
 
   /**
    * Get configuration status message
    */
   static getConfigStatusMessage() {
-    if (!APIValidator.isConfigured()) {
-      return `⚠️ JDoodle API not configured. Get free credentials from https://www.jdoodle.com/compiler-api/ and update JDOODLE_CONFIG in js/api-validator.js`;
-    }
-    return '✅ JDoodle API configured';
+    return '✅ Wandbox Compiler API Ready';
   }
 }
