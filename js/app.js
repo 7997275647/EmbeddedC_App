@@ -133,10 +133,10 @@ class EmbeddedCApp {
   /**
    * Submit code for validation
    */
-  submitCode() {
+  async submitCode() {
     const level = LEVELS[stateManager.state.currentLevel];
     const code = document.getElementById('code-editor').value;
-    EventHandlers.submitCode(level, code);
+    await EventHandlers.submitCode(level, code);
   }
 }
 
