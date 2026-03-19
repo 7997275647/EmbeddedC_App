@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EmbeddedC — Learn Embedded C Interactively</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #0f1526;
+    --bg3: #141b30;
+    --panel: #1a2340;
+    --panel2: #1e2a48;
+    --border: #2a3a5e;
+    --accent: #3b82f6;
+    --accent2: #60a5fa;
+    --accent3: #93c5fd;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --orange: #f97316;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Sora', sans-serif;
+    --radius: 12px;
+    --glow: 0 0 20px rgba(59,130,246,0.15);
+    --glow-strong: 0 0 40px rgba(59,130,246,0.3);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; }
+  
+  /* Subtle grid background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,14,26,0.9); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+  }
+  .header-inner {
+    max-width: 1400px; margin: 0 auto;
+    display: flex; align-items: center; gap: 20px;
+    height: 60px;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .logo-icon {
+    width: 34px; height: 34px; background: var(--accent);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 13px; font-weight: 700; color: #fff;
+    box-shadow: var(--glow);
+  }
+  .logo-text { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+  .logo-text span { color: var(--accent2); }
+
+  .header-progress-wrap { flex: 1; display: flex; align-items: center; gap: 12px; }
+  .header-progress-label { font-family: var(--mono); font-size: 11px; color: var(--text3); white-space: nowrap; }
+  .header-progress-bar { flex: 1; height: 6px; background: var(--panel); border-radius: 99px; overflow: hidden; }
+  .header-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--green)); border-radius: 99px; transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+
+  .streak-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 99px; padding: 4px 12px;
+    font-family: var(--mono); font-size: 12px; color: var(--yellow);
+    font-weight: 600;
+  }
+  .streak-fire { font-size: 14px; }
+
+  /* ── LAYOUT ── */
+  .app { max-width: 1400px; margin: 0 auto; padding: 24px 24px 60px; position: relative; z-index: 1; }
+  .app-grid { display: grid; grid-template-columns: 280px 1fr; gap: 20px; align-items: start; }
+
+  /* ── SIDEBAR ── */
+  .sidebar { position: sticky; top: 80px; }
+  .sidebar-title {
+    font-size: 10px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--text3);
+    margin-bottom: 12px; padding: 0 4px;
+  }
+  .level-list { display: flex; flex-direction: column; gap: 4px; }
+  .level-btn {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 8px;
+    border: 1px solid transparent; background: transparent;
+    cursor: pointer; text-align: left; transition: all 0.15s;
+    font-family: var(--sans); color: var(--text2); width: 100%;
+  }
+  .level-btn:hover { background: var(--panel); border-color: var(--border); color: var(--text); }
+  .level-btn.active { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.4); color: var(--accent2); }
+  .level-btn.completed { color: var(--green); }
+  .level-btn.locked { opacity: 0.35; cursor: not-allowed; }
+  .level-num {
+    width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    background: var(--panel2); color: var(--text3);
+  }
+  .level-btn.completed .level-num { background: rgba(34,197,94,0.15); color: var(--green); }
+  .level-btn.active .level-num { background: rgba(59,130,246,0.2); color: var(--accent2); }
+  .level-name { font-size: 12px; font-weight: 500; line-height: 1.3; }
+  .level-check { margin-left: auto; font-size: 12px; }
+
+  /* ── MAIN PANEL ── */
+  .main { display: flex; flex-direction: column; gap: 16px; }
+
+  .level-header {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 22px 24px;
+    box-shadow: var(--glow);
+  }
+  .level-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 10px; font-weight: 600;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: var(--accent2); margin-bottom: 10px;
+  }
+  .level-tag-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+  .level-h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.3px; }
+  .level-desc { font-size: 14px; color: var(--text2); line-height: 1.65; }
+
+  .concept-box {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px;
+    border-left: 3px solid var(--accent);
+  }
+  .concept-label {
+    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--accent2); margin-bottom: 10px;
+  }
+  .concept-text { font-size: 13px; color: var(--text2); line-height: 1.7; }
+  .concept-text code {
+    font-family: var(--mono); font-size: 12px;
+    background: rgba(59,130,246,0.1); color: var(--accent3);
+    padding: 1px 5px; border-radius: 4px;
+  }
+
+  .task-box {
+    background: rgba(34,197,94,0.05); border: 1px solid rgba(34,197,94,0.2);
+    border-radius: var(--radius); padding: 18px 20px;
+  }
+  .task-label {
+    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--green); margin-bottom: 10px;
+  }
+  .task-text { font-size: 14px; color: var(--text); line-height: 1.65; font-weight: 500; }
+
+  /* ── EDITOR ── */
+  .editor-wrap {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  .editor-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px; background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+  .editor-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .editor-filename {
+    margin-left: 6px; font-family: var(--mono); font-size: 11px;
+    color: var(--text3);
+  }
+  .editor-actions { margin-left: auto; display: flex; gap: 8px; }
+  .btn-hint {
+    font-family: var(--mono); font-size: 11px;
+    background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3);
+    color: var(--yellow); border-radius: 6px; padding: 4px 10px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-hint:hover { background: rgba(245,158,11,0.2); }
+  .btn-reset {
+    font-family: var(--mono); font-size: 11px;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text3); border-radius: 6px; padding: 4px 10px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-reset:hover { border-color: var(--text2); color: var(--text); }
+
+  textarea#code-editor {
+    width: 100%; min-height: 220px;
+    background: var(--bg); color: #a8d8ff;
+    font-family: var(--mono); font-size: 13px; line-height: 1.7;
+    border: none; outline: none; resize: vertical;
+    padding: 18px 20px; tab-size: 2;
+    caret-color: var(--accent2);
+  }
+  textarea#code-editor::selection { background: rgba(59,130,246,0.25); }
+
+  .editor-footer {
+    padding: 10px 16px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .editor-footer-hint { font-family: var(--mono); font-size: 10px; color: var(--text3); }
+  .btn-submit {
+    background: var(--accent); color: #fff; border: none;
+    border-radius: 8px; padding: 9px 22px;
+    font-family: var(--sans); font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+    box-shadow: 0 0 20px rgba(59,130,246,0.3);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .btn-submit:hover { background: #2563eb; box-shadow: 0 0 30px rgba(59,130,246,0.5); transform: translateY(-1px); }
+  .btn-submit:active { transform: translateY(0); }
+
+  /* ── HINT BOX ── */
+  .hint-box {
+    background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.2);
+    border-radius: var(--radius); padding: 16px 18px;
+    font-size: 13px; color: var(--text2); line-height: 1.7;
+    display: none;
+  }
+  .hint-box.visible { display: block; }
+  .hint-box code { font-family: var(--mono); font-size: 12px; color: var(--yellow); }
+
+  /* ── FEEDBACK ── */
+  .feedback-box {
+    border-radius: var(--radius); padding: 20px 22px;
+    border: 1px solid; display: none;
+    animation: fadeSlideIn 0.3s ease;
+  }
+  @keyframes fadeSlideIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .feedback-box.visible { display: block; }
+  .feedback-box.success { background: rgba(34,197,94,0.07); border-color: rgba(34,197,94,0.3); }
+  .feedback-box.error { background: rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.3); }
+  .feedback-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .feedback-icon { font-size: 20px; }
+  .feedback-title { font-size: 15px; font-weight: 700; }
+  .feedback-box.success .feedback-title { color: var(--green); }
+  .feedback-box.error .feedback-title { color: var(--red); }
+  .feedback-body { font-size: 13px; color: var(--text2); line-height: 1.7; }
+  .feedback-body code { font-family: var(--mono); font-size: 12px; }
+  .feedback-box.success .feedback-body code { color: var(--green); }
+  .feedback-box.error .feedback-body code { color: var(--red); }
+
+  .expected-block {
+    margin-top: 14px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 16px;
+  }
+  .expected-label { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 1px; margin-bottom: 8px; }
+  .expected-code { font-family: var(--mono); font-size: 12px; color: #a8d8ff; line-height: 1.7; white-space: pre-wrap; }
+
+  /* ── BADGE ── */
+  .badge-popup {
+    position: fixed; top: 80px; right: 24px;
+    background: linear-gradient(135deg, #1a2340, #1e2a48);
+    border: 1px solid rgba(34,197,94,0.4); border-radius: 14px;
+    padding: 18px 22px; box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 40px rgba(34,197,94,0.15);
+    z-index: 200; display: none;
+    animation: badgePop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes badgePop { from { opacity:0; transform:scale(0.7) translateY(20px); } to { opacity:1; transform:scale(1) translateY(0); } }
+  .badge-popup.visible { display: block; }
+  .badge-emoji { font-size: 36px; text-align: center; display: block; margin-bottom: 6px; }
+  .badge-title { font-size: 12px; font-weight: 700; text-align: center; color: var(--green); }
+  .badge-sub { font-size: 11px; color: var(--text3); text-align: center; }
+
+  /* ── COMPLETION SCREEN ── */
+  #completion-screen {
+    display: none; text-align: center; padding: 60px 40px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--glow-strong);
+  }
+  #completion-screen.visible { display: block; animation: fadeSlideIn 0.5s ease; }
+  .completion-emoji { font-size: 64px; margin-bottom: 20px; }
+  .completion-h { font-size: 28px; font-weight: 800; margin-bottom: 12px; letter-spacing: -0.5px; }
+  .completion-sub { font-size: 15px; color: var(--text2); margin-bottom: 30px; }
+  .completion-stats {
+    display: flex; gap: 24px; justify-content: center; flex-wrap: wrap;
+    margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 24px; min-width: 120px;
+  }
+  .stat-val { font-size: 28px; font-weight: 800; font-family: var(--mono); color: var(--accent2); }
+  .stat-label { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+  @media (max-width: 900px) {
+    .app-grid { grid-template-columns: 1fr; }
+    .sidebar { position: static; }
+    .level-list { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+    .level-btn { flex: 0 0 auto; }
+    .level-name { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">EC</div>
+      <div class="logo-text">Embedded<span>C</span></div>
+    </div>
+    <div class="header-progress-wrap">
+      <span class="header-progress-label" id="progress-label">0 / 15</span>
+      <div class="header-progress-bar">
+        <div class="header-progress-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="streak-badge">
+      <span class="streak-fire">🔥</span>
+      <span id="streak-count">0</span> streak
+    </div>
+  </div>
+</header>
+
+<div class="badge-popup" id="badge-popup">
+  <span class="badge-emoji" id="badge-emoji">🏆</span>
+  <div class="badge-title" id="badge-title">Badge Earned!</div>
+  <div class="badge-sub" id="badge-sub"></div>
+</div>
+
+<div class="app">
+  <div class="app-grid">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-title">Curriculum</div>
+      <div class="level-list" id="level-list"></div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main" id="main-content">
+      <!-- dynamically rendered -->
+    </main>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const LEVELS = [
+  {
+    id: 1, title: "Hello, Embedded World",
+    tag: "Basics", category: "basics",
+    desc: "Every journey begins with a single output. In Embedded C, we often communicate through serial output or register writes. Let's start by printing a simple message.",
+    concept: "The <code>printf</code> function outputs formatted text. In embedded systems, this typically maps to a UART serial interface. The <code>#include &lt;stdio.h&gt;</code> header provides this function.",
+    task: "Write a complete C program that prints exactly: Hello, Embedded World!",
+    hint: "Use <code>printf(\"Hello, Embedded World!\\n\");</code> inside your <code>main()</code> function. Don't forget to <code>#include &lt;stdio.h&gt;</code> at the top.",
+    expected: `#include <stdio.h>
+int main() {
+    printf("Hello, Embedded World!\\n");
+    return 0;
+}`,
+    validate: (code) => code.includes('printf') && code.includes("Hello, Embedded World!") && code.includes('main'),
+    explanation: "Your program needs <code>#include &lt;stdio.h&gt;</code> for printf, a <code>main()</code> function as the entry point, and <code>printf(\"Hello, Embedded World!\\n\");</code> to produce the output.",
+    badge: { emoji: "🌟", title: "First Boot!", sub: "Completed Level 1" }
+  },
+  {
+    id: 2, title: "Bit Manipulation: Set a Bit",
+    tag: "Bit Ops", category: "bits",
+    desc: "In embedded systems, hardware registers are controlled by setting individual bits. This is fundamental to toggling LEDs, enabling peripherals, and configuring hardware.",
+    concept: "The bitwise OR operator <code>|</code> sets specific bits without affecting others. To set bit N: <code>reg = reg | (1 &lt;&lt; N);</code>. This is also written as <code>reg |= (1 &lt;&lt; N);</code>.",
+    task: "Declare an unsigned char variable 'reg' set to 0. Set bit 3 of 'reg' using bitwise OR, then print the result. Expected output: 8",
+    hint: "Bit 3 has value 2³ = 8. Use: <code>unsigned char reg = 0; reg |= (1 &lt;&lt; 3); printf(\"%d\\n\", reg);</code>",
+    expected: `#include <stdio.h>
+int main() {
+    unsigned char reg = 0;
+    reg |= (1 << 3);
+    printf("%d\\n", reg);
+    return 0;
+}`,
+    validate: (code) => code.includes('|=') && code.includes('1 << 3') || code.includes('1<<3') && code.includes('printf'),
+    explanation: "Setting bit 3 means OR-ing with <code>(1 &lt;&lt; 3)</code> which equals 8 in decimal. The output should be <code>8</code>.",
+    badge: { emoji: "⚡", title: "Bit Wizard", sub: "Mastered bit setting" }
+  },
+  {
+    id: 3, title: "Bit Manipulation: Clear a Bit",
+    tag: "Bit Ops", category: "bits",
+    desc: "Clearing a bit is equally important — turning off an LED, disabling an interrupt, or resetting a flag in a status register.",
+    concept: "To clear bit N: use AND with the complement: <code>reg &amp;= ~(1 &lt;&lt; N);</code>. The <code>~</code> operator flips all bits, and <code>&amp;</code> masks out the target bit.",
+    task: "Start with reg = 0xFF (all bits set). Clear bit 5, then print the result. Expected output: 223",
+    hint: "0xFF = 255. Clearing bit 5 (value 32) gives 255 - 32 = 223. Use: <code>reg &amp;= ~(1 &lt;&lt; 5);</code>",
+    expected: `#include <stdio.h>
+int main() {
+    unsigned char reg = 0xFF;
+    reg &= ~(1 << 5);
+    printf("%d\\n", reg);
+    return 0;
+}`,
+    validate: (code) => code.includes('&=') && (code.includes('~(1 << 5)') || code.includes('~(1<<5)')) && code.includes('0xFF'),
+    explanation: "0xFF = 255. Bit 5 = 32. After clearing: 255 - 32 = 223. The expression <code>~(1 &lt;&lt; 5)</code> creates a mask with all bits set except bit 5.",
+    badge: { emoji: "🎯", title: "Bit Eraser", sub: "Mastered bit clearing" }
+  },
+  {
+    id: 4, title: "Bit Manipulation: Toggle a Bit",
+    tag: "Bit Ops", category: "bits",
+    desc: "Toggling flips a bit's state — the foundation of blinking LEDs and toggle switches in embedded systems.",
+    concept: "XOR operator <code>^</code> toggles bits: <code>reg ^= (1 &lt;&lt; N);</code>. XOR with 1 flips the bit; XOR with 0 leaves it unchanged.",
+    task: "Start with reg = 0b00001010 (decimal 10). Toggle bit 1, then print the result. Expected output: 8",
+    hint: "0b00001010 = 10. Bit 1 is set (value 2). Toggling clears it: 10 - 2 = 8. Use: <code>reg ^= (1 &lt;&lt; 1);</code>",
+    expected: `#include <stdio.h>
+int main() {
+    unsigned char reg = 0b00001010;
+    reg ^= (1 << 1);
+    printf("%d\\n", reg);
+    return 0;
+}`,
+    validate: (code) => code.includes('^=') && (code.includes('1 << 1') || code.includes('1<<1')) && code.includes('printf'),
+    explanation: "0b00001010 = 10 decimal. Bit 1 = 2. XOR toggles it off: 10 XOR 2 = 8. Result is 8.",
+    badge: { emoji: "🔄", title: "Toggle King", sub: "Mastered XOR toggling" }
+  },
+  {
+    id: 5, title: "Check a Bit (Read Status)",
+    tag: "Bit Ops", category: "bits",
+    desc: "Before acting, embedded systems must check hardware status flags — is the UART buffer ready? Is a button pressed?",
+    concept: "To check if bit N is set: <code>if (reg &amp; (1 &lt;&lt; N))</code>. This masks all other bits; the result is non-zero if the bit is set.",
+    task: "Create reg = 0b00110100. Check if bit 2 is set. Print 'Bit is SET' if true, 'Bit is CLEAR' if false.",
+    hint: "0b00110100 = 52. Bit 2 = 4. 52 & 4 = 4 (non-zero = true). Use <code>if (reg &amp; (1 &lt;&lt; 2))</code>.",
+    expected: `#include <stdio.h>
+int main() {
+    unsigned char reg = 0b00110100;
+    if (reg & (1 << 2)) {
+        printf("Bit is SET\\n");
+    } else {
+        printf("Bit is CLEAR\\n");
+    }
+    return 0;
+}`,
+    validate: (code) => code.includes('& (1 << 2)') || code.includes('&(1<<2)') || code.includes('& (1<<2)'),
+    explanation: "0b00110100 = 52. Bit 2 has value 4. 52 & 4 = 4 (non-zero), so the condition is true and we print 'Bit is SET'.",
+    badge: { emoji: "🔍", title: "Status Reader", sub: "Mastered bit checking" }
+  },
+  {
+    id: 6, title: "Variables & Data Types",
+    tag: "Fundamentals", category: "basics",
+    desc: "Embedded C programmers carefully choose data types to match hardware register widths and conserve precious RAM.",
+    concept: "Common embedded types: <code>uint8_t</code> (1 byte), <code>uint16_t</code> (2 bytes), <code>uint32_t</code> (4 bytes) from <code>&lt;stdint.h&gt;</code>. These have guaranteed sizes unlike <code>int</code>.",
+    task: "Using stdint.h types, declare a uint8_t with value 255, uint16_t with value 1000, and uint32_t with value 100000. Print all three on separate lines.",
+    hint: "Include <code>&lt;stdint.h&gt;</code> and use format specifiers: <code>%u</code> for uint8_t/uint16_t, <code>%lu</code> for uint32_t.",
+    expected: `#include <stdio.h>
+#include <stdint.h>
+int main() {
+    uint8_t a = 255;
+    uint16_t b = 1000;
+    uint32_t c = 100000;
+    printf("%u\\n", a);
+    printf("%u\\n", b);
+    printf("%lu\\n", c);
+    return 0;
+}`,
+    validate: (code) => code.includes('uint8_t') && code.includes('uint16_t') && code.includes('uint32_t') && code.includes('stdint.h'),
+    explanation: "Always use fixed-width types from <code>&lt;stdint.h&gt;</code> in embedded code. <code>uint8_t</code> is always 8 bits, <code>uint16_t</code> always 16 bits, <code>uint32_t</code> always 32 bits.",
+    badge: { emoji: "📦", title: "Type Safe", sub: "Mastered fixed-width types" }
+  },
+  {
+    id: 7, title: "Control Flow: if/else",
+    tag: "Control", category: "control",
+    desc: "Conditional logic drives embedded behavior — if temperature exceeds threshold, activate fan; else keep idle.",
+    concept: "Standard C <code>if/else</code> works identically in embedded C. However, be cautious of floating-point comparisons and ensure conditions avoid undefined behavior.",
+    task: "Read an integer variable 'temp' set to 85. If temp >= 80, print 'OVERHEAT WARNING'. If temp >= 60, print 'WARM'. Otherwise print 'NORMAL'.",
+    hint: "Use chained if/else if/else. Check the highest threshold first (>=80), then middle (>=60), then the else case.",
+    expected: `#include <stdio.h>
+int main() {
+    int temp = 85;
+    if (temp >= 80) {
+        printf("OVERHEAT WARNING\\n");
+    } else if (temp >= 60) {
+        printf("WARM\\n");
+    } else {
+        printf("NORMAL\\n");
+    }
+    return 0;
+}`,
+    validate: (code) => code.includes('temp') && code.includes('>= 80') && code.includes('OVERHEAT WARNING') && code.includes('else'),
+    explanation: "With temp = 85, the first condition <code>temp >= 80</code> is true, so 'OVERHEAT WARNING' is printed. The else-if and else branches are skipped.",
+    badge: { emoji: "🌡️", title: "Decision Maker", sub: "Mastered conditionals" }
+  },
+  {
+    id: 8, title: "Loops: for Loop Basics",
+    tag: "Control", category: "control",
+    desc: "Loops are essential in embedded programming — scanning ADC channels, initializing memory buffers, or polling registers.",
+    concept: "A <code>for</code> loop: <code>for (init; condition; update)</code>. In embedded systems, loops often scan hardware registers or iterate over fixed-size arrays.",
+    task: "Use a for loop to print the squares of numbers 1 through 5, one per line. Output: 1, 4, 9, 16, 25",
+    hint: "Use <code>for (int i = 1; i &lt;= 5; i++)</code> and print <code>i * i</code> in each iteration.",
+    expected: `#include <stdio.h>
+int main() {
+    for (int i = 1; i <= 5; i++) {
+        printf("%d\\n", i * i);
+    }
+    return 0;
+}`,
+    validate: (code) => code.includes('for') && code.includes('i * i') || code.includes('i*i'),
+    explanation: "The loop runs from i=1 to i=5. Each iteration prints i*i: 1, 4, 9, 16, 25.",
+    badge: { emoji: "🔁", title: "Loop Master", sub: "Mastered for loops" }
+  },
+  {
+    id: 9, title: "Arrays & Memory Buffers",
+    tag: "Arrays", category: "arrays",
+    desc: "Arrays are memory buffers — they hold ADC readings, UART receive buffers, lookup tables, and sensor data in embedded systems.",
+    concept: "An array is a contiguous block of memory: <code>uint8_t buffer[8];</code>. Access elements with index: <code>buffer[0]</code> through <code>buffer[7]</code>. Index starts at 0.",
+    task: "Declare an integer array of 5 sensor readings: {23, 45, 12, 67, 34}. Find and print the maximum value. Expected output: 67",
+    hint: "Initialize max to arr[0], then loop through arr[1] to arr[4], updating max if arr[i] > max.",
+    expected: `#include <stdio.h>
+int main() {
+    int sensors[5] = {23, 45, 12, 67, 34};
+    int max = sensors[0];
+    for (int i = 1; i < 5; i++) {
+        if (sensors[i] > max) max = sensors[i];
+    }
+    printf("%d\\n", max);
+    return 0;
+}`,
+    validate: (code) => code.includes('{23') && code.includes('67') && (code.includes('max') || code.includes('MAX')),
+    explanation: "Iterate through the array tracking the maximum value seen. Starting with 23, we update max at 45, then 67 (final max). Output: 67.",
+    badge: { emoji: "📊", title: "Buffer Boss", sub: "Mastered arrays" }
+  },
+  {
+    id: 10, title: "Functions: Modular Code",
+    tag: "Functions", category: "functions",
+    desc: "Embedded firmware is organized into functions for readability and reuse — ISR handlers, initialization routines, and drivers.",
+    concept: "Functions in C: <code>return_type function_name(parameters) { body }</code>. Functions can return values and accept arguments. Prototype declarations precede main if needed.",
+    task: "Write a function 'clamp(int val, int min, int max)' that returns val clamped between min and max. Test: clamp(150, 0, 100) → print 100",
+    hint: "If val < min return min; if val > max return max; else return val. Call with clamp(150, 0, 100) and print the result.",
+    expected: `#include <stdio.h>
+int clamp(int val, int min, int max) {
+    if (val < min) return min;
+    if (val > max) return max;
+    return val;
+}
+int main() {
+    printf("%d\\n", clamp(150, 0, 100));
+    return 0;
+}`,
+    validate: (code) => code.includes('clamp') && code.includes('150') && code.includes('return') && code.includes('min') && code.includes('max'),
+    explanation: "The clamp function limits val to [min, max]. With clamp(150, 0, 100): 150 > 100, so it returns 100.",
+    badge: { emoji: "🧩", title: "Function Factory", sub: "Mastered functions" }
+  },
+  {
+    id: 11, title: "Pointers: Memory Addresses",
+    tag: "Pointers", category: "pointers",
+    desc: "Pointers are the heart of embedded C — hardware registers ARE memory addresses. Memory-mapped I/O means writing to a pointer IS controlling hardware.",
+    concept: "A pointer stores a memory address: <code>int *ptr = &amp;var;</code>. Dereference with <code>*ptr</code> to read/write the value. In embedded: <code>volatile uint32_t *GPIO = (uint32_t*)0x40020000;</code>",
+    task: "Declare int x = 42. Create a pointer to x. Through the pointer, change x to 100. Print x (not *ptr). Expected: 100",
+    hint: "Use <code>int *ptr = &amp;x;</code> then <code>*ptr = 100;</code>. Now x itself is changed. Print with <code>printf(\"%d\\n\", x);</code>",
+    expected: `#include <stdio.h>
+int main() {
+    int x = 42;
+    int *ptr = &x;
+    *ptr = 100;
+    printf("%d\\n", x);
+    return 0;
+}`,
+    validate: (code) => code.includes('*ptr') && code.includes('&x') && code.includes('100') && code.includes('printf'),
+    explanation: "ptr holds the address of x. Writing <code>*ptr = 100</code> modifies the value at that address — which IS x. So printing x gives 100.",
+    badge: { emoji: "👉", title: "Pointer Pro", sub: "Mastered pointers" }
+  },
+  {
+    id: 12, title: "Structs: Grouping Hardware Data",
+    tag: "Structs", category: "structs",
+    desc: "Structs model hardware registers and sensor data. A struct can represent a GPIO port configuration or a CAN message frame.",
+    concept: "A struct groups related data: <code>struct Sensor { uint8_t id; int16_t value; uint8_t status; };</code>. Access with dot notation: <code>s.value</code> or via pointer: <code>s-&gt;value</code>.",
+    task: "Define a struct 'Sensor' with fields: id (int), value (int), active (int). Create one with id=1, value=250, active=1. Print: Sensor 1: 250 [ACTIVE]",
+    hint: "Define the struct before main. Create: <code>struct Sensor s = {1, 250, 1};</code>. Print using s.id, s.value, and a ternary/if for status.",
+    expected: `#include <stdio.h>
+struct Sensor {
+    int id;
+    int value;
+    int active;
+};
+int main() {
+    struct Sensor s = {1, 250, 1};
+    printf("Sensor %d: %d [%s]\\n", s.id, s.value, s.active ? "ACTIVE" : "INACTIVE");
+    return 0;
+}`,
+    validate: (code) => code.includes('struct') && code.includes('id') && code.includes('value') && code.includes('active') && code.includes('Sensor'),
+    explanation: "Structs bundle related fields together. We access fields with dot notation and use a ternary operator to print ACTIVE/INACTIVE based on the active flag.",
+    badge: { emoji: "🏗️", title: "Data Architect", sub: "Mastered structs" }
+  },
+  {
+    id: 13, title: "Volatile Keyword",
+    tag: "Advanced", category: "advanced",
+    desc: "The 'volatile' keyword is critical in embedded C — it prevents compiler optimizations that would break hardware register access and interrupt handlers.",
+    concept: "<code>volatile</code> tells the compiler: 'this variable may change outside program control'. Without it, the compiler might cache register reads in CPU registers, missing hardware updates.",
+    task: "Declare a volatile unsigned int 'status_reg' = 0xAB. Print its value in hex. Then set bit 4 using a volatile pointer approach. Print again. Output: ab, then bb",
+    hint: "Use <code>volatile unsigned int status_reg = 0xAB;</code>, print with <code>%x</code>. Set bit 4: <code>status_reg |= (1 &lt;&lt; 4);</code> (adds 0x10). Print again.",
+    expected: `#include <stdio.h>
+int main() {
+    volatile unsigned int status_reg = 0xAB;
+    printf("%x\\n", status_reg);
+    status_reg |= (1 << 4);
+    printf("%x\\n", status_reg);
+    return 0;
+}`,
+    validate: (code) => code.includes('volatile') && code.includes('0xAB') && code.includes('%x'),
+    explanation: "0xAB = 10101011. Setting bit 4 (0x10 = 00010000): 10101011 | 00010000 = 10111011 = 0xBB. volatile ensures the compiler always reads/writes memory.",
+    badge: { emoji: "⚠️", title: "Volatile Veteran", sub: "Mastered volatile" }
+  },
+  {
+    id: 14, title: "Enums & #define Constants",
+    tag: "Advanced", category: "advanced",
+    desc: "Named constants improve firmware readability. Instead of magic numbers, use enums or #defines to represent hardware states, pin numbers, and modes.",
+    concept: "<code>#define LED_PIN 5</code> creates a preprocessor constant. <code>enum State { IDLE, RUNNING, ERROR };</code> creates named integer constants. Both eliminate magic numbers.",
+    task: "Define an enum with states: IDLE=0, RUNNING=1, ERROR=2. Create variable 'state' set to RUNNING. Print: State: 1 (RUNNING)",
+    hint: "Use <code>enum State { IDLE=0, RUNNING=1, ERROR=2 };</code>. Then <code>enum State state = RUNNING;</code> and print state value with the name.",
+    expected: `#include <stdio.h>
+enum State { IDLE=0, RUNNING=1, ERROR=2 };
+int main() {
+    enum State state = RUNNING;
+    printf("State: %d (RUNNING)\\n", state);
+    return 0;
+}`,
+    validate: (code) => code.includes('enum') && code.includes('RUNNING') && code.includes('IDLE') && code.includes('ERROR'),
+    explanation: "Enums map names to integers. RUNNING = 1, so printing <code>state</code> gives 1. This is far more readable than 'state = 1' scattered through code.",
+    badge: { emoji: "📋", title: "Constants Guru", sub: "Mastered enums" }
+  },
+  {
+    id: 15, title: "Memory: Stack vs Heap Awareness",
+    tag: "Advanced", category: "advanced",
+    desc: "Embedded systems often have kilobytes of RAM. Understanding stack allocation, avoiding dynamic allocation, and using static variables is crucial for reliable firmware.",
+    concept: "Local variables live on the stack (fast, auto-freed). <code>static</code> local vars persist between calls. In embedded systems, avoid malloc/free — prefer static allocation to prevent heap fragmentation.",
+    task: "Write a function 'counter()' using a static local variable that increments each call. Call it 5 times and print each result: 1, 2, 3, 4, 5",
+    hint: "Inside counter(): <code>static int count = 0; count++; return count;</code>. The static variable retains its value between calls.",
+    expected: `#include <stdio.h>
+int counter() {
+    static int count = 0;
+    count++;
+    return count;
+}
+int main() {
+    for (int i = 0; i < 5; i++) {
+        printf("%d\\n", counter());
+    }
+    return 0;
+}`,
+    validate: (code) => code.includes('static') && code.includes('count') && code.includes('counter') && code.includes('for'),
+    explanation: "A static local variable is initialized once and persists between function calls. Each call to counter() increments count from 1 to 5. This is a common pattern for event counting in ISRs.",
+    badge: { emoji: "🧠", title: "Memory Master", sub: "Completed all 15 levels!" }
+  }
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let state = {
+  currentLevel: 0,
+  completed: new Set(),
+  streak: 0,
+  hintVisible: false,
+  codes: {}
+};
+
+// Load from localStorage
+try {
+  const saved = JSON.parse(localStorage.getItem('embeddedc_state') || '{}');
+  if (saved.completed) state.completed = new Set(saved.completed);
+  if (saved.streak) state.streak = saved.streak;
+  if (saved.codes) state.codes = saved.codes;
+  if (saved.currentLevel !== undefined) state.currentLevel = saved.currentLevel;
+} catch(e) {}
+
+function saveState() {
+  localStorage.setItem('embeddedc_state', JSON.stringify({
+    completed: [...state.completed],
+    streak: state.streak,
+    codes: state.codes,
+    currentLevel: state.currentLevel
+  }));
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function updateHeader() {
+  const count = state.completed.size;
+  document.getElementById('progress-label').textContent = `${count} / 15`;
+  document.getElementById('progress-fill').style.width = `${(count / 15) * 100}%`;
+  document.getElementById('streak-count').textContent = state.streak;
+}
+
+function renderSidebar() {
+  const list = document.getElementById('level-list');
+  list.innerHTML = LEVELS.map((lv, i) => {
+    const done = state.completed.has(lv.id);
+    const active = i === state.currentLevel;
+    const locked = i > 0 && !state.completed.has(LEVELS[i-1].id) && i > state.currentLevel && !done;
+    let cls = 'level-btn';
+    if (done) cls += ' completed';
+    if (active) cls += ' active';
+    if (locked) cls += ' locked';
+    return `<button class="${cls}" onclick="selectLevel(${i})" ${locked ? 'disabled' : ''}>
+      <div class="level-num">${lv.id}</div>
+      <div class="level-name">${lv.title}</div>
+      <div class="level-check">${done ? '✓' : ''}</div>
+    </button>`;
+  }).join('');
+}
+
+function renderLevel() {
+  const lv = LEVELS[state.currentLevel];
+  state.hintVisible = false;
+  const savedCode = state.codes[lv.id] || lv.expected;
+
+  const html = `
+    <div class="level-header">
+      <div class="level-tag"><div class="level-tag-dot"></div>Level ${lv.id} — ${lv.tag}</div>
+      <div class="level-h1">${lv.title}</div>
+      <div class="level-desc">${lv.desc}</div>
+    </div>
+    <div class="concept-box">
+      <div class="concept-label">📖 Concept</div>
+      <div class="concept-text">${lv.concept}</div>
+    </div>
+    <div class="task-box">
+      <div class="task-label">🎯 Your Task</div>
+      <div class="task-text">${lv.task}</div>
+    </div>
+    <div class="editor-wrap">
+      <div class="editor-bar">
+        <div class="editor-dot" style="background:#ef4444"></div>
+        <div class="editor-dot" style="background:#f59e0b"></div>
+        <div class="editor-dot" style="background:#22c55e"></div>
+        <div class="editor-filename">main.c</div>
+        <div class="editor-actions">
+          <button class="btn-hint" onclick="toggleHint()">💡 Hint</button>
+          <button class="btn-reset" onclick="resetCode()">↺ Reset</button>
+        </div>
+      </div>
+      <textarea id="code-editor" spellcheck="false" autocorrect="off" autocapitalize="off">${escHtml(savedCode)}</textarea>
+      <div class="editor-footer">
+        <div class="editor-footer-hint">Tab = 2 spaces · Ctrl+Enter = Submit</div>
+        <button class="btn-submit" onclick="submitCode()">▶ Run & Check</button>
+      </div>
+    </div>
+    <div class="hint-box" id="hint-box">${lv.hint}</div>
+    <div class="feedback-box" id="feedback-box"></div>
+  `;
+
+  if (state.completed.size === 15) {
+    document.getElementById('main-content').innerHTML = renderCompletion() + html;
+  } else {
+    document.getElementById('main-content').innerHTML = html;
+  }
+
+  // Tab key support
+  document.getElementById('code-editor').addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const ta = e.target;
+      const s = ta.selectionStart, end = ta.selectionEnd;
+      ta.value = ta.value.substring(0, s) + '  ' + ta.value.substring(end);
+      ta.selectionStart = ta.selectionEnd = s + 2;
+    }
+    if (e.ctrlKey && e.key === 'Enter') submitCode();
+  });
+
+  document.getElementById('code-editor').addEventListener('input', () => {
+    state.codes[lv.id] = document.getElementById('code-editor').value;
+    saveState();
+  });
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderCompletion() {
+  return `<div id="completion-screen" class="visible">
+    <div class="completion-emoji">🏆</div>
+    <div class="completion-h">You've Mastered Embedded C!</div>
+    <div class="completion-sub">All 15 levels completed. You're ready for real firmware development.</div>
+    <div class="completion-stats">
+      <div class="stat-card"><div class="stat-val">15</div><div class="stat-label">Levels Done</div></div>
+      <div class="stat-card"><div class="stat-val">${state.streak}</div><div class="stat-label">Best Streak</div></div>
+      <div class="stat-card"><div class="stat-val">100%</div><div class="stat-label">Complete</div></div>
+    </div>
+  </div>`;
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────────
+function selectLevel(i) {
+  state.currentLevel = i;
+  saveState();
+  renderSidebar();
+  renderLevel();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleHint() {
+  state.hintVisible = !state.hintVisible;
+  document.getElementById('hint-box').classList.toggle('visible', state.hintVisible);
+}
+
+function resetCode() {
+  const lv = LEVELS[state.currentLevel];
+  delete state.codes[lv.id];
+  saveState();
+  document.getElementById('code-editor').value = lv.expected;
+  document.getElementById('feedback-box').classList.remove('visible');
+}
+
+function submitCode() {
+  const lv = LEVELS[state.currentLevel];
+  const code = document.getElementById('code-editor').value;
+  const fb = document.getElementById('feedback-box');
+  const correct = lv.validate(code);
+
+  if (correct) {
+    const wasNew = !state.completed.has(lv.id);
+    state.completed.add(lv.id);
+    if (wasNew) state.streak++;
+    saveState();
+    updateHeader();
+    renderSidebar();
+
+    fb.className = 'feedback-box success visible';
+    fb.innerHTML = `
+      <div class="feedback-header">
+        <div class="feedback-icon">✅</div>
+        <div class="feedback-title">Correct! Well done.</div>
+      </div>
+      <div class="feedback-body">${lv.explanation}</div>
+    `;
+
+    if (wasNew) {
+      showBadge(lv.badge);
+      // Auto-advance after 2s
+      setTimeout(() => {
+        if (state.currentLevel < 14) selectLevel(state.currentLevel + 1);
+        else renderLevel(); // re-render with completion screen
+      }, 2200);
+    }
+  } else {
+    state.streak = 0;
+    saveState();
+    updateHeader();
+
+    fb.className = 'feedback-box error visible';
+    fb.innerHTML = `
+      <div class="feedback-header">
+        <div class="feedback-icon">❌</div>
+        <div class="feedback-title">Not quite — keep going!</div>
+      </div>
+      <div class="feedback-body">${lv.explanation}
+        <div class="expected-block">
+          <div class="expected-label">EXPECTED SOLUTION</div>
+          <div class="expected-code">${escHtml(lv.expected)}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function showBadge(badge) {
+  const popup = document.getElementById('badge-popup');
+  document.getElementById('badge-emoji').textContent = badge.emoji;
+  document.getElementById('badge-title').textContent = badge.title;
+  document.getElementById('badge-sub').textContent = badge.sub;
+  popup.classList.add('visible');
+  setTimeout(() => popup.classList.remove('visible'), 3000);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+updateHeader();
+renderSidebar();
+renderLevel();
+</script>
+</body>
+</html>
