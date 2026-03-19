@@ -110,40 +110,52 @@ class APIValidator {
       stdin: ''
     };
 
-    const response = await fetch(JDOODLE_CONFIG.apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
+    try {
+      console.log('Sending code to JDoodle API...');
+      const response = await fetch(JDOODLE_CONFIG.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload),
+        mode: 'cors'
+      });
 
-    if (!response.ok) {
-      throw new Error(`JDoodle API error: ${response.status}`);
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`JDoodle API error: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('API Response:', result);
+      
+      // JDoodle response format:
+      // {
+      //   "statusCode": 200,
+      //   "output": "program output here",
+      //   "cpuTime": 0.15,
+      //   "memory": 1024
+      // }
+      // Or error:
+      // {
+      //   "statusCode": 201,
+      //   "error": "compilation error details"
+      // }
+
+      return {
+        output: result.output || '',
+        statusCode: result.statusCode || 200,
+        error: result.error || (result.statusCode !== 200 ? result.output : null),
+        cpuTime: result.cpuTime,
+        memory: result.memory
+      };
+    } catch (error) {
+      console.error('JDoodle API Call Error:', error);
+      throw error;
     }
-
-    const result = await response.json();
-    
-    // JDoodle response format:
-    // {
-    //   "statusCode": 200,
-    //   "output": "program output here",
-    //   "cpuTime": 0.15,
-    //   "memory": 1024
-    // }
-    // Or error:
-    // {
-    //   "statusCode": 201,
-    //   "error": "compilation error details"
-    // }
-
-    return {
-      output: result.output || '',
-      statusCode: result.statusCode || 200,
-      error: result.error || (result.statusCode !== 200 ? result.output : null),
-      cpuTime: result.cpuTime,
-      memory: result.memory
-    };
   }
 
   /**
@@ -162,25 +174,5 @@ class APIValidator {
       return `⚠️ JDoodle API not configured. Get free credentials from https://www.jdoodle.com/compiler-api/ and update JDOODLE_CONFIG in js/api-validator.js`;
     }
     return '✅ JDoodle API configured';
-  }
-}
-
-        details: error.message,
-        type: 'network_error'
-      };
-    }
-  }
-
-  /**
-   * Check if server is running
-   */
-  static async checkServer() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/health`);
-      return response.ok;
-    } catch (error) {
-      console.error('Server check failed:', error);
-      return false;
-    }
   }
 }

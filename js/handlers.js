@@ -9,10 +9,12 @@ class EventHandlers {
    */
   static async submitCode(level, code) {
     // Show loading state
-    const submitBtn = document.querySelector('.submit-btn');
-    const originalText = submitBtn.textContent;
-    submitBtn.textContent = 'Compiling...';
-    submitBtn.disabled = true;
+    const submitBtn = document.querySelector('.btn-submit');
+    const originalText = submitBtn ? submitBtn.textContent : '▶ Run & Check';
+    if (submitBtn) {
+      submitBtn.textContent = 'Compiling...';
+      submitBtn.disabled = true;
+    }
 
     try {
       const result = await APIValidator.validate(level.id, code);
@@ -77,8 +79,10 @@ class EventHandlers {
       );
     } finally {
       // Restore button state
-      submitBtn.textContent = originalText;
-      submitBtn.disabled = false;
+      if (submitBtn) {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+      }
     }
   }
 
