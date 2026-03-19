@@ -1,13 +1,66 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>embeddedc-app</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EmbeddedC — Learn Embedded C Interactively</title>
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">EC</div>
+        <div class="logo-text">Embedded<span>C</span></div>
+      </div>
+      <div class="header-progress-wrap">
+        <span class="header-progress-label" id="progress-label">0 / 15</span>
+        <div class="header-progress-bar">
+          <div class="header-progress-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="streak-badge">
+        <span class="streak-fire">🔥</span>
+        <span id="streak-count">0</span> streak
+      </div>
+    </div>
+  </header>
+
+  <!-- Badge Popup -->
+  <div class="badge-popup" id="badge-popup">
+    <span class="badge-emoji" id="badge-emoji">🏆</span>
+    <div class="badge-title" id="badge-title">Badge Earned!</div>
+    <div class="badge-sub" id="badge-sub"></div>
+  </div>
+
+  <!-- Main App -->
+  <div class="app">
+    <div class="app-grid">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-title">Curriculum</div>
+        <div class="level-list" id="level-list"></div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main" id="main-content">
+        <!-- Dynamically rendered by app.js -->
+      </main>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <!-- Load modules in order -->
+  <script src="js/data.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/handlers.js"></script>
+  <script src="js/app.js"></script>
+</body>
 </html>
