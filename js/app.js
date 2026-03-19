@@ -57,7 +57,10 @@ class EmbeddedCApp {
   renderCurrentLevel() {
     const levelIndex = stateManager.state.currentLevel;
     const level = LEVELS[levelIndex];
-    const currentCode = stateManager.getCode(level.id, level.expected);
+    const savedCode = stateManager.getCode(level.id, null);
+    
+    // Use saved code if exists, otherwise use template
+    const currentCode = savedCode !== null ? savedCode : UIRenderer.getTemplate(level);
 
     UIRenderer.renderLevel(
       level,

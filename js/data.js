@@ -16,7 +16,7 @@ int main() {
     printf("Hello, Embedded World!\\n");
     return 0;
 }`,
-    validate: (code) => code.includes('printf') && code.includes("Hello, Embedded World!") && code.includes('main'),
+    validate: (code) => CodeValidator.validate(1, code),
     explanation: "Your program needs <code>#include &lt;stdio.h&gt;</code> for printf, a <code>main()</code> function as the entry point, and <code>printf(\"Hello, Embedded World!\\n\");</code> to produce the output.",
     badge: { emoji: "🌟", title: "First Boot!", sub: "Completed Level 1" }
   },
@@ -34,7 +34,7 @@ int main() {
     printf("%d\\n", reg);
     return 0;
 }`,
-    validate: (code) => code.includes('|=') && code.includes('1 << 3') || code.includes('1<<3') && code.includes('printf'),
+    validate: (code) => CodeValidator.validate(2, code),
     explanation: "Setting bit 3 means OR-ing with <code>(1 &lt;&lt; 3)</code> which equals 8 in decimal. The output should be <code>8</code>.",
     badge: { emoji: "⚡", title: "Bit Wizard", sub: "Mastered bit setting" }
   },
@@ -52,7 +52,7 @@ int main() {
     printf("%d\\n", reg);
     return 0;
 }`,
-    validate: (code) => code.includes('&=') && (code.includes('~(1 << 5)') || code.includes('~(1<<5)')) && code.includes('0xFF'),
+    validate: (code) => CodeValidator.validate(3, code),
     explanation: "0xFF = 255. Bit 5 = 32. After clearing: 255 - 32 = 223. The expression <code>~(1 &lt;&lt; 5)</code> creates a mask with all bits set except bit 5.",
     badge: { emoji: "🎯", title: "Bit Eraser", sub: "Mastered bit clearing" }
   },
@@ -70,7 +70,7 @@ int main() {
     printf("%d\\n", reg);
     return 0;
 }`,
-    validate: (code) => code.includes('^=') && (code.includes('1 << 1') || code.includes('1<<1')) && code.includes('printf'),
+    validate: (code) => CodeValidator.validate(4, code),
     explanation: "0b00001010 = 10 decimal. Bit 1 = 2. XOR toggles it off: 10 XOR 2 = 8. Result is 8.",
     badge: { emoji: "🔄", title: "Toggle King", sub: "Mastered XOR toggling" }
   },
@@ -91,7 +91,7 @@ int main() {
     }
     return 0;
 }`,
-    validate: (code) => code.includes('& (1 << 2)') || code.includes('&(1<<2)') || code.includes('& (1<<2)'),
+    validate: (code) => CodeValidator.validate(5, code),
     explanation: "0b00110100 = 52. Bit 2 has value 4. 52 & 4 = 4 (non-zero), so the condition is true and we print 'Bit is SET'.",
     badge: { emoji: "🔍", title: "Status Reader", sub: "Mastered bit checking" }
   },
@@ -113,7 +113,7 @@ int main() {
     printf("%lu\\n", c);
     return 0;
 }`,
-    validate: (code) => code.includes('uint8_t') && code.includes('uint16_t') && code.includes('uint32_t') && code.includes('stdint.h'),
+    validate: (code) => CodeValidator.validate(6, code),
     explanation: "Always use fixed-width types from <code>&lt;stdint.h&gt;</code> in embedded code. <code>uint8_t</code> is always 8 bits, <code>uint16_t</code> always 16 bits, <code>uint32_t</code> always 32 bits.",
     badge: { emoji: "📦", title: "Type Safe", sub: "Mastered fixed-width types" }
   },
@@ -136,7 +136,7 @@ int main() {
     }
     return 0;
 }`,
-    validate: (code) => code.includes('temp') && code.includes('>= 80') && code.includes('OVERHEAT WARNING') && code.includes('else'),
+    validate: (code) => CodeValidator.validate(7, code),
     explanation: "With temp = 85, the first condition <code>temp >= 80</code> is true, so 'OVERHEAT WARNING' is printed. The else-if and else branches are skipped.",
     badge: { emoji: "🌡️", title: "Decision Maker", sub: "Mastered conditionals" }
   },
@@ -154,7 +154,7 @@ int main() {
     }
     return 0;
 }`,
-    validate: (code) => code.includes('for') && code.includes('i * i') || code.includes('i*i'),
+    validate: (code) => CodeValidator.validate(8, code),
     explanation: "The loop runs from i=1 to i=5. Each iteration prints i*i: 1, 4, 9, 16, 25.",
     badge: { emoji: "🔁", title: "Loop Master", sub: "Mastered for loops" }
   },
@@ -175,7 +175,7 @@ int main() {
     printf("%d\\n", max);
     return 0;
 }`,
-    validate: (code) => code.includes('{23') && code.includes('67') && (code.includes('max') || code.includes('MAX')),
+    validate: (code) => CodeValidator.validate(9, code),
     explanation: "Iterate through the array tracking the maximum value seen. Starting with 23, we update max at 45, then 67 (final max). Output: 67.",
     badge: { emoji: "📊", title: "Buffer Boss", sub: "Mastered arrays" }
   },
@@ -196,7 +196,7 @@ int main() {
     printf("%d\\n", clamp(150, 0, 100));
     return 0;
 }`,
-    validate: (code) => code.includes('clamp') && code.includes('150') && code.includes('return') && code.includes('min') && code.includes('max'),
+    validate: (code) => CodeValidator.validate(10, code),
     explanation: "The clamp function limits val to [min, max]. With clamp(150, 0, 100): 150 > 100, so it returns 100.",
     badge: { emoji: "🧩", title: "Function Factory", sub: "Mastered functions" }
   },
@@ -215,7 +215,7 @@ int main() {
     printf("%d\\n", x);
     return 0;
 }`,
-    validate: (code) => code.includes('*ptr') && code.includes('&x') && code.includes('100') && code.includes('printf'),
+    validate: (code) => CodeValidator.validate(11, code),
     explanation: "ptr holds the address of x. Writing <code>*ptr = 100</code> modifies the value at that address — which IS x. So printing x gives 100.",
     badge: { emoji: "👉", title: "Pointer Pro", sub: "Mastered pointers" }
   },
@@ -237,7 +237,7 @@ int main() {
     printf("Sensor %d: %d [%s]\\n", s.id, s.value, s.active ? "ACTIVE" : "INACTIVE");
     return 0;
 }`,
-    validate: (code) => code.includes('struct') && code.includes('id') && code.includes('value') && code.includes('active') && code.includes('Sensor'),
+    validate: (code) => CodeValidator.validate(12, code),
     explanation: "Structs bundle related fields together. We access fields with dot notation and use a ternary operator to print ACTIVE/INACTIVE based on the active flag.",
     badge: { emoji: "🏗️", title: "Data Architect", sub: "Mastered structs" }
   },
@@ -256,7 +256,7 @@ int main() {
     printf("%x\\n", status_reg);
     return 0;
 }`,
-    validate: (code) => code.includes('volatile') && code.includes('0xAB') && code.includes('%x'),
+    validate: (code) => CodeValidator.validate(13, code),
     explanation: "0xAB = 10101011. Setting bit 4 (0x10 = 00010000): 10101011 | 00010000 = 10111011 = 0xBB. volatile ensures the compiler always reads/writes memory.",
     badge: { emoji: "⚠️", title: "Volatile Veteran", sub: "Mastered volatile" }
   },
@@ -274,7 +274,7 @@ int main() {
     printf("State: %d (RUNNING)\\n", state);
     return 0;
 }`,
-    validate: (code) => code.includes('enum') && code.includes('RUNNING') && code.includes('IDLE') && code.includes('ERROR'),
+    validate: (code) => CodeValidator.validate(14, code),
     explanation: "Enums map names to integers. RUNNING = 1, so printing <code>state</code> gives 1. This is far more readable than 'state = 1' scattered through code.",
     badge: { emoji: "📋", title: "Constants Guru", sub: "Mastered enums" }
   },
@@ -297,7 +297,7 @@ int main() {
     }
     return 0;
 }`,
-    validate: (code) => code.includes('static') && code.includes('count') && code.includes('counter') && code.includes('for'),
+    validate: (code) => CodeValidator.validate(15, code),
     explanation: "A static local variable is initialized once and persists between function calls. Each call to counter() increments count from 1 to 5. This is a common pattern for event counting in ISRs.",
     badge: { emoji: "🧠", title: "Memory Master", sub: "Completed all 15 levels!" }
   }

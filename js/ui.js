@@ -69,6 +69,13 @@ class UIRenderer {
   }
 
   /**
+   * Get initial template code (empty or with minimal structure)
+   */
+  static getTemplate(level) {
+    return getTemplateFoLevel(level.id);
+  }
+
+  /**
    * Render main level content
    */
   static renderLevel(level, currentCode, isAllCompleted) {
