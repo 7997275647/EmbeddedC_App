@@ -42,29 +42,33 @@ class APIValidator {
     try {
       // Call JDoodle API
       const result = await APIValidator.executeCode(code);
+      
+      console.log('Validation Result:', {
+        statusCode: result.statusCode,
+        error: result.error,
+        output: result.output
+      });
 
-      // Check for compilation/runtime errors
-      if (result.error) {
+      // Check for actual compilation/runtime errors (statusCode 201)
+      if (result.statusCode === 201 || result.error) {
+        console.log('Compilation/Runtime Error detected');
         return {
           correct: false,
           message: 'Compilation/Runtime Error',
-          details: result.error,
+          details: result.error || result.output,
           type: 'error'
-        };
-      }
-
-      if (result.statusCode !== 200) {
-        return {
-          correct: false,
-          message: 'Execution Error',
-          details: result.output || 'Code did not execute successfully',
-          type: 'execution_error'
         };
       }
 
       // Get actual and expected output
       const actualOutput = (result.output || '').trim();
       const expectedOutput = (EXPECTED_OUTPUTS[levelId] || '').trim();
+      
+      console.log('Output Comparison:', {
+        expected: expectedOutput,
+        actual: actualOutput,
+        match: actualOutput === expectedOutput
+      });
 
       // Compare outputs
       if (actualOutput === expectedOutput) {
